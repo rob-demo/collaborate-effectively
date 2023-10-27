@@ -63,12 +63,10 @@ jobs:
               # find the option with name
               $option = $statusField.options | Where-Object {$_.name -eq "$STATUSFIELDVALUE"}
 
+              # todo: check if the status option is actually forward, to prevent us from going backward
+
               Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
               gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
            }
 
-           // todo: write for other field types
-
-           
-                     
-           
+           # todo: write for other field types                     
