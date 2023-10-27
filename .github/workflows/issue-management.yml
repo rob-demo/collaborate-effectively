@@ -2,7 +2,9 @@ name: Issue management
 
 on:
   issues:
-    types: assigned
+    types: [assigned]
+  pull_request:
+    types: [opened, reopened]
 
 # map fields with customized labels
 env:
@@ -23,7 +25,7 @@ permissions:
 jobs:
   issue-assigned:
     runs-on: ubuntu-latest
-    if: github.event_name == 'issues' && github.event.action == 'assigned' && github.repository == 'rob-demo/collaborate-effectively'    
+    if: github.event_name == 'issues' && github.event.action == 'assigned' && github.repository == 'rob-demo/collaborate-effectively'
     steps:    
       - name: Get Token
         id: get_workflow_token
@@ -36,6 +38,62 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           STATUSFIELDVALUE: "Todo"
+          STATUSFIELDNAME: "Status"
+        shell: pwsh
+        run: |
+           $PROJECTOWNER = $env:PROJECTOWNER
+           $PROJECTNUMBER = $env:PROJECTNUMBER
+           $ISSUENUMBER = $env:ISSUE_NUMBER
+           $ISSUEID = $env:ISSUE_ID
+           $STATUSFIELDVALUE = $env:STATUSFIELDVALUE
+           $STATUSFIELDNAME = $env:STATUSFIELDNAME
+           
+           echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
+           $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
+           if ($null -eq $project) {
+             Write-Error "Cannot locate project with owner [$PROJECTOWNER] and number [$PROJECTNUMBER]"
+           }
+
+           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
+           if ($null -eq $issue) {
+             Write-Error "Cannot locate issue with number [$ISSUENUMBER] in project number [$PROJECTNUMBER] for owner [$PROJECTOWNER]"
+           }
+           
+           # load the status field for this project
+           $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "$STATUSFIELDNAME"}
+           if ($statusField.type -eq "ProjectV2SingleSelectField") {
+              # find the option with name
+              $option = $statusField.options | Where-Object {$_.name -eq "$STATUSFIELDVALUE"}
+
+              # todo: check if the status option is actually forward, to prevent us from going backward
+
+              Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
+              gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
+           }
+
+           # todo: write for other field types!
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+           echo "${{ github.event_name }}"
+
+  pr-openend:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened' && github.repository == 'rob-demo/collaborate-effectively'
+    steps:    
+      - name: Get Token
+        id: get_workflow_token
+        uses: peter-murray/workflow-application-token-action@8e1ba3bf1619726336414f1014e37f17fbadf1db
+        with:
+          application_id: ${{ vars.GH_APPLICATION_ID }}
+          application_private_key: ${{ secrets.GH_APPLICATION_PRIVATE_KEY }}
+          
+      - name: change-status-in-project
+        env:
+          GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+          STATUSFIELDVALUE: "In progress"
           STATUSFIELDNAME: "Status"
         shell: pwsh
         run: |
