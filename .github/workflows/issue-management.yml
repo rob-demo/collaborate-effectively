@@ -172,7 +172,7 @@ jobs:
 
            foreach ($issue in $result.data.resource.closingIssuesReferences.edges) {
              Write-Host "Running foreach with this issue: $($issue | ConvertTo-Json)"
-             updateIssueInProject -PROJECTNUMBER $PROJECTNUMBER --PROJECTOWNER $PROJECTOWNER -statusField $statusField -ISSUENUMBER "$($issue.number)"
+             updateIssueInProject -PROJECTNUMBER $PROJECTNUMBER -PROJECTOWNER $PROJECTOWNER -statusField $statusField -ISSUENUMBER "$($issue.number)"
            }
 
            
