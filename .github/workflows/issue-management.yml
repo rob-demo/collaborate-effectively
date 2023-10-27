@@ -128,7 +128,11 @@ jobs:
                   '}' +
                 '}' +
               '}' +
-           '}}}' | ConvertFrom-JSON
+           '}}}' 
+
+           Write-Host 'GraphQL result: ' + $result
+
+           $result = $result | ConvertFrom-JSON
 
            if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
              Write-Error "Error loading linked issues from this PR"
