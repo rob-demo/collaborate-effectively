@@ -40,12 +40,12 @@ jobs:
            $PROJECTOWNER = $env:PROJECTOWNER
            $PROJECTNUMBER = $env:PROJECTNUMBER
            
-           echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"
-           gh project list --owner "$PROJECTOWNER"
+           echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
+           $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
            
            # load the status field for this project
            $statusField = $(gh project field-list 2 --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
 
            Write-Host "status fieldid: [$($statusField.id)]"
                      
-           gh project item-edit --project-id "$PROJECTNUMBER" --id "$env:ISSUE_NUMBER" --field-id "$($statusField.id)"  --text "Todo"
+           gh project item-edit --project-id "$PROJECTNUMBER" --id "$($project.id" --field-id "$($statusField.id)" --text "Todo"
