@@ -169,6 +169,17 @@ jobs:
              Write-Error "Cannot locate project with owner [$PROJECTOWNER] and number [$PROJECTNUMBER]"
            }
 
+           # load the status field for this project
+           $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "$STATUSFIELDNAME"}
+           if ($null -eq $statusField) {
+             Write-Error "Cannot find status field with name [$STATUSFIELDNAME] for project [PROJECTNUMBER] in owner [$PROJECTOWNER]"
+           }
+
+           # also move the PR itself to the "${{ env.progress }}" column
+           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "PullRequest" -And $_.content.number -eq $PULLREQUEST.number}
+           $option = $statusField.options | Where-Object {$_.name -eq "${{ env.progress }}"}
+           gh project item-edit --project-id "$($project.id)" --id "$($PULLREQUEST.node_id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
+
            # load all linked issues from PR
            $prUrl = $PULLREQUEST._links.html
            $query = 'query {' + [environment]::NewLine +
@@ -189,13 +200,7 @@ jobs:
            $result = (gh api graphql -f query=$query) | ConvertFrom-JSON -Depth 10
 
            if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
-             Write-Error "Error loading linked issues from this PR"
-           }
-
-           # load the status field for this project
-           $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "$STATUSFIELDNAME"}
-           if ($null -eq $statusField) {
-             Write-Error "Cannot find status field with name [$STATUSFIELDNAME] for project [PROJECTNUMBER] in owner [$PROJECTOWNER]"
+             Write-Error "Error loading linked issues from this PR: [$($result | ConvertTo-Json)]"
            }
             
            function updateIssueInProject {
@@ -230,10 +235,4 @@ jobs:
              Write-Debug "Running foreach with this issue: $($issue | ConvertTo-Json)"
              updateIssueInProject -PROJECTNUMBER $PROJECTNUMBER -PROJECTOWNER $PROJECTOWNER -statusField $statusField -ISSUENUMBER "$($issue.node.number)"
            }
-
-           # also move the PR itself to the "${{ env.progress }}" column
-           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "PullRequest" -And $_.content.number -eq $PULLREQUEST.number}
-           $option = $statusField.options | Where-Object {$_.name -eq "${{ env.progress }}"}
-           gh project item-edit --project-id "$($project.id)" --id "$($PULLREQUEST.node_id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
-
            
