@@ -35,6 +35,7 @@ jobs:
       - name: change-status-in-project
         env:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+          STATUSFIELDVALUE: "Todo"
         shell: pwsh
         run: |
            # test if the token works
@@ -42,6 +43,7 @@ jobs:
            $PROJECTNUMBER = $env:PROJECTNUMBER
            $ISSUENUMBER = $env:ISSUE_NUMBER
            $ISSUEID = $env:ISSUE_ID
+           $STATUSFIELDVALUE = $env:STATUSFIELDVALUE
            
            echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
            $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
@@ -50,7 +52,11 @@ jobs:
            
            # load the status field for this project
            $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
+           if ($statusField.type -eq "ProjectV2SingleSelectField") {
+              # find the option with nae "Todo"
+              $option = $statusField.options | Where-Object {$_.name -eq "$STATUSFIELDVALUE"}
+           }
 
            Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
                      
-           gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --text "Todo"
+           gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
