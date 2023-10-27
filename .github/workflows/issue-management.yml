@@ -14,9 +14,6 @@ env:
 
   PROJECTOWNER: 'rob-demo'
   PROJECTNUMBER: 2
-  ISSUE_URL: "${{ github.event.issue.html_url }}"
-  ISSUE_NUMBER: "${{ github.event.issue.number }}"
-  ISSUE_ID: "${{ github.event.issue.id }}"
 
 permissions:
   issues: write
@@ -39,6 +36,9 @@ jobs:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           STATUSFIELDVALUE: "Todo"
           STATUSFIELDNAME: "Status"
+          ISSUE_URL: "${{ github.event.issue.html_url }}"
+          ISSUE_NUMBER: "${{ github.event.issue.number }}"
+          ISSUE_ID: "${{ github.event.issue.id }}"
         shell: pwsh
         run: |
            $PROJECTOWNER = $env:PROJECTOWNER
@@ -71,7 +71,7 @@ jobs:
               gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
            }
 
-           # todo: write for other field types!
+           # todo: add support for other field types!
 
   test:
     runs-on: ubuntu-latest
@@ -82,7 +82,7 @@ jobs:
 
   pr-openend:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'opened' && github.repository == 'rob-demo/collaborate-effectively'
+    if: (github.event_name == 'pull_request' && github.repository == 'rob-demo/collaborate-effectively') && (github.event.action == 'opened' || github.event.action == 'reopened')
     steps:    
       - name: Get Token
         id: get_workflow_token
@@ -96,20 +96,23 @@ jobs:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           STATUSFIELDVALUE: "In progress"
           STATUSFIELDNAME: "Status"
+          PULLREQUEST: "${{toJSON(github.event.pull_request)}}"
         shell: pwsh
         run: |
            $PROJECTOWNER = $env:PROJECTOWNER
            $PROJECTNUMBER = $env:PROJECTNUMBER
-           $ISSUENUMBER = $env:ISSUE_NUMBER
-           $ISSUEID = $env:ISSUE_ID
            $STATUSFIELDVALUE = $env:STATUSFIELDVALUE
            $STATUSFIELDNAME = $env:STATUSFIELDNAME
-           
+           $PULLREQUEST = $env:PULLREQUEST | ConvertFrom-Json           
+
            echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
            $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
            if ($null -eq $project) {
              Write-Error "Cannot locate project with owner [$PROJECTOWNER] and number [$PROJECTNUMBER]"
            }
+
+           # find all issues to update:
+           $ISSUENUMBER = (($PULLREQUEST._links.issue).Split "/")[-1]
 
            $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
            if ($null -eq $issue) {
@@ -128,4 +131,4 @@ jobs:
               gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
            }
 
-           # todo: write for other field types                     
+           # todo: add support for other field types                     
