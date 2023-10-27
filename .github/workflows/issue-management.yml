@@ -112,7 +112,7 @@ jobs:
            }
 
            # find all issues to update:
-           $ISSUENUMBER = (($PULLREQUEST._links.issue).Split "/")[-1]
+           $ISSUENUMBER = (($PULLREQUEST._links.issue) -split "/")[-1]
 
            $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
            if ($null -eq $issue) {
