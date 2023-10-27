@@ -112,7 +112,7 @@ jobs:
            }
 
            # find all issues to update:
-           if ($null -eq $PULLREQUEST._links.issue)) {
+           if ($null -eq $PULLREQUEST._links.issue) {
               Write-Error "Pull request not linked to an issue"
            }
 
