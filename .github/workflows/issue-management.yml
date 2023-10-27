@@ -36,27 +36,39 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           STATUSFIELDVALUE: "Todo"
+          STATUSFIELDNAME: "Status"
         shell: pwsh
         run: |
-           # test if the token works
            $PROJECTOWNER = $env:PROJECTOWNER
            $PROJECTNUMBER = $env:PROJECTNUMBER
            $ISSUENUMBER = $env:ISSUE_NUMBER
            $ISSUEID = $env:ISSUE_ID
            $STATUSFIELDVALUE = $env:STATUSFIELDVALUE
+           $STATUSFIELDNAME = $env:STATUSFIELDNAME
            
            echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
            $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
-
-           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
-           
-           # load the status field for this project
-           $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
-           if ($statusField.type -eq "ProjectV2SingleSelectField") {
-              # find the option with nae "Todo"
-              $option = $statusField.options | Where-Object {$_.name -eq "$STATUSFIELDVALUE"}
+           if ($null -eq $project) {
+             Write-Error "Cannot locate project with owner [$PROJECTOWNER] and number [$PROJECTNUMBER]"
            }
 
-           Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
+           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
+           if ($null -eq $issue) {
+             Write-Error "Cannot locate issue with number [$ISSUENUMBER] in project number [$PROJECTNUMBER] for owner [$PROJECTOWNER]"
+           }
+           
+           # load the status field for this project
+           $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "$STATUSFIELDNAME"}
+           if ($statusField.type -eq "ProjectV2SingleSelectField") {
+              # find the option with name
+              $option = $statusField.options | Where-Object {$_.name -eq "$STATUSFIELDVALUE"}
+
+              Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
+              gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
+           }
+
+           // todo: write for other field types
+
+           
                      
-           gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
+           
