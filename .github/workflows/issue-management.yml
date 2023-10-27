@@ -38,6 +38,9 @@ jobs:
         run: |
            # test if the token works
            $PROJECTOWNER = $env:PROJECTOWNER
+           $PROJECTNUMBER = $env:PROJECTNUMBER
+           
+           echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"
            gh project list --owner "$PROJECTOWNER"
            
            # load the status field for this project
@@ -45,4 +48,4 @@ jobs:
 
            Write-Host "status fieldid: [$($statusField.id)]"
                      
-           gh project item-edit --project-id "$PROJECTNUMBER" --owner "$PROJECTOWNER" --id "$env:ISSUE_NUMBER" --field-id $statusField.id  --text "Todo"
+           gh project item-edit --project-id "$PROJECTNUMBER" --owner "$PROJECTOWNER" --id "$env:ISSUE_NUMBER" --field-id "$($statusField.id)"  --text "Todo"
