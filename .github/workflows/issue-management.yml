@@ -20,6 +20,8 @@ permissions:
   repository-projects: write
 
 jobs:
+  # todo: create job for pr created and move that to done, otherwise it will only be in the "backlog" column
+  
   issue-assigned:
     runs-on: ubuntu-latest
     if: github.event_name == 'issues' && github.event.action == 'assigned' && github.repository == 'rob-demo/collaborate-effectively'
@@ -149,7 +151,7 @@ jobs:
                $statusField
              )
 
-            Write-Host "Changing field [$statusField.name] to value [$STATUSFIELDVALUE]  with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
+            Write-Host "Changing field [$($statusField.name)] to value [$STATUSFIELDVALUE]  with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
 
             $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
             if ($null -eq $issue) {
