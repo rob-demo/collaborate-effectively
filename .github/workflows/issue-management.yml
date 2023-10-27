@@ -149,7 +149,7 @@ jobs:
           application_id: ${{ vars.GH_APPLICATION_ID }}
           application_private_key: ${{ secrets.GH_APPLICATION_PRIVATE_KEY }}
           
-      - name: change-linked-issues
+      - name: Change linked issues and PR
         env:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           STATUSFIELDVALUE: "In progress"
@@ -163,7 +163,7 @@ jobs:
            $STATUSFIELDNAME = $env:STATUSFIELDNAME
            $PULLREQUEST = $env:PULLREQUEST | ConvertFrom-Json           
 
-           Write-Debug "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
+           Write-Host "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
            $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
            if ($null -eq $project) {
              Write-Error "Cannot locate project with owner [$PROJECTOWNER] and number [$PROJECTNUMBER]"
@@ -179,6 +179,7 @@ jobs:
            $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "PullRequest" -And $_.content.number -eq $PULLREQUEST.number}
            $option = $statusField.options | Where-Object {$_.name -eq "${{ env.progress }}"}
            gh project item-edit --project-id "$($project.id)" --id "$($PULLREQUEST.node_id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
+           Write-Host "Moved PR's field [$($statusField.name)] to value [${{ env.progress }}]  with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], $PULLREQUEST.number [$($PULLREQUEST.number)]"
 
            # load all linked issues from PR
            $prUrl = $PULLREQUEST._links.html
