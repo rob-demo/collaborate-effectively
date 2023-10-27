@@ -10,6 +10,7 @@ on:
 env:
   todo: Todo
   assigned: Assigned
+  progress: "In Progress"
   done: Done
 
   PROJECTOWNER: 'rob-demo'
@@ -21,7 +22,7 @@ permissions:
 
 jobs:
   # todo: create job for pr created and move that to done, otherwise it will only be in the "backlog" column
-  
+
   issue-assigned:
     runs-on: ubuntu-latest
     if: github.event_name == 'issues' && github.event.action == 'assigned' && github.repository == 'rob-demo/collaborate-effectively'
@@ -41,6 +42,59 @@ jobs:
           ISSUE_URL: "${{ github.event.issue.html_url }}"
           ISSUE_NUMBER: "${{ github.event.issue.number }}"
           ISSUE_ID: "${{ github.event.issue.id }}"
+        shell: pwsh
+        run: |
+           $PROJECTOWNER = $env:PROJECTOWNER
+           $PROJECTNUMBER = $env:PROJECTNUMBER
+           $ISSUENUMBER = $env:ISSUE_NUMBER
+           $ISSUEID = $env:ISSUE_ID
+           $STATUSFIELDVALUE = $env:STATUSFIELDVALUE
+           $STATUSFIELDNAME = $env:STATUSFIELDNAME
+           
+           echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
+           $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
+           if ($null -eq $project) {
+             Write-Error "Cannot locate project with owner [$PROJECTOWNER] and number [$PROJECTNUMBER]"
+           }
+
+           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
+           if ($null -eq $issue) {
+             Write-Error "Cannot locate issue with number [$ISSUENUMBER] in project number [$PROJECTNUMBER] for owner [$PROJECTOWNER]"
+           }
+           
+           # load the status field for this project
+           $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "$STATUSFIELDNAME"}
+           if ($statusField.type -eq "ProjectV2SingleSelectField") {
+              # find the option with name
+              $option = $statusField.options | Where-Object {$_.name -eq "$STATUSFIELDVALUE"}
+
+              # todo: check if the status option is actually forward, to prevent us from going backward
+
+              Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
+              gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
+           }
+
+           # todo: add support for other field types!
+
+  pr-opened2:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened' && github.repository == 'rob-demo/collaborate-effectively'
+    steps:    
+      - name: Get Token
+        id: get_workflow_token
+        uses: peter-murray/workflow-application-token-action@8e1ba3bf1619726336414f1014e37f17fbadf1db
+        with:
+          application_id: ${{ vars.GH_APPLICATION_ID }}
+          application_private_key: ${{ secrets.GH_APPLICATION_PRIVATE_KEY }}
+          
+      - name: change-status-in-project
+        env:
+          GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+          STATUSFIELDVALUE: "${{ env.progress }}"
+          STATUSFIELDNAME: "Status"
+          ISSUE_URL: "${{ github.event.issue.html_url }}"
+          ISSUE_NUMBER: "${{ github.event.number }}"
+          ISSUE_ID: "${{ github.event.id }}"
         shell: pwsh
         run: |
            $PROJECTOWNER = $env:PROJECTOWNER
@@ -95,7 +149,7 @@ jobs:
           application_id: ${{ vars.GH_APPLICATION_ID }}
           application_private_key: ${{ secrets.GH_APPLICATION_PRIVATE_KEY }}
           
-      - name: change-status-in-project
+      - name: change-linked-issues
         env:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           STATUSFIELDVALUE: "In progress"
@@ -116,8 +170,9 @@ jobs:
            }
 
            # load all linked issues from PR
+           $prUrl = $PULLREQUEST._links.html
            $query = 'query {' + [environment]::NewLine +
-            'resource(url: \"https://github.com/rob-demo/collaborate-effectively/pull/4\") {' + [environment]::NewLine +
+            'resource(url: \"$prUrl\") {' + [environment]::NewLine +
               '... on PullRequest {' + [environment]::NewLine +
               'id' + [environment]::NewLine +
               'closingIssuesReferences (first: 50) {' + [environment]::NewLine +
@@ -153,7 +208,7 @@ jobs:
 
             Write-Host "Changing field [$($statusField.name)] to value [$STATUSFIELDVALUE]  with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
 
-            $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
+            $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "Issue" -And $_.content.number -eq $ISSUENUMBER}
             if ($null -eq $issue) {
               Write-Error "Cannot locate issue with number [$ISSUENUMBER] in project number [$PROJECTNUMBER] for owner [$PROJECTOWNER]"
             }
@@ -175,5 +230,10 @@ jobs:
              Write-Debug "Running foreach with this issue: $($issue | ConvertTo-Json)"
              updateIssueInProject -PROJECTNUMBER $PROJECTNUMBER -PROJECTOWNER $PROJECTOWNER -statusField $statusField -ISSUENUMBER "$($issue.node.number)"
            }
+
+           # also move the PR itself to the "${{ env.progress }}" column
+           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "PullRequest" -And $_.content.number -eq $PULLREQUEST.number}
+           $option = $statusField.options | Where-Object {$_.name -eq "${{ env.progress }}"}
+           gh project item-edit --project-id "$($project.id)" --id "$($PULLREQUEST.node_id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
 
            
