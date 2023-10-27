@@ -129,7 +129,6 @@ jobs:
                 '}' + [environment]::NewLine +
               '}' + [environment]::NewLine +
            '}}}' 
-           Write-Host "Query contents = [$query]"
            $result = (gh api graphql -f query=$query) | ConvertFrom-JSON -Depth 10
 
            if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
@@ -150,7 +149,7 @@ jobs:
                $statusField
              )
 
-            Write-Host "Running updateIssueInProject with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
+            Write-Debug "Running updateIssueInProject with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
 
             $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
             if ($null -eq $issue) {
@@ -163,7 +162,7 @@ jobs:
 
                 # todo: check if the status option is actually forward, to prevent us from going backward
 
-                Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
+                Write-Debug "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
                 gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
             }
 
@@ -171,7 +170,7 @@ jobs:
            }
 
            foreach ($issue in $result.data.resource.closingIssuesReferences.edges) {
-             Write-Host "Running foreach with this issue: $($issue | ConvertTo-Json)"
+             Write-Debug "Running foreach with this issue: $($issue | ConvertTo-Json)"
              updateIssueInProject -PROJECTNUMBER $PROJECTNUMBER -PROJECTOWNER $PROJECTOWNER -statusField $statusField -ISSUENUMBER "$($issue.node.number)"
            }
 
