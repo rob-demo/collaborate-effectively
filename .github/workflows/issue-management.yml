@@ -163,43 +163,13 @@ jobs:
            $STATUSFIELDNAME = $env:STATUSFIELDNAME
            $PULLREQUEST = $env:PULLREQUEST | ConvertFrom-Json           
 
-           Write-Host "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
+           echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
            $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
            if ($null -eq $project) {
              Write-Error "Cannot locate project with owner [$PROJECTOWNER] and number [$PROJECTNUMBER]"
            }
 
-           # load the status field for this project
-           $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "$STATUSFIELDNAME"}
-           if ($null -eq $statusField) {
-             Write-Error "Cannot find status field with name [$STATUSFIELDNAME] for project [PROJECTNUMBER] in owner [$PROJECTOWNER]"
-           }
-
-           # also move the PR itself to the "${{ env.progress }}" column
-           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "PullRequest" -And $_.content.number -eq $PULLREQUEST.number}
-           $option = $statusField.options | Where-Object {$_.name -eq "${{ env.progress }}"}
-           gh project item-edit --project-id "$($project.id)" --id "$($PULLREQUEST.node_id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
-           Write-Host "Moved PR's field [$($statusField.name)] to value [${{ env.progress }}] with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], PULLREQUEST.number [$($PULLREQUEST.number)]"
-
            # load all linked issues from PR
-           $prUrl = $PULLREQUEST._links.html.href
-           Write-Host "Searching for linked issues with url [$prUrl]"
-           $query = 'query {' + [environment]::NewLine +
-            'resource(url: "' + $prUrl + '") {' + [environment]::NewLine +
-              '... on PullRequest {' + [environment]::NewLine +
-              'id' + [environment]::NewLine +
-              'closingIssuesReferences (first: 50) {' + [environment]::NewLine +
-                'edges {' + [environment]::NewLine +
-                  'node {' + [environment]::NewLine +
-                    'id' + [environment]::NewLine +
-                    'body' + [environment]::NewLine +
-                    'number' + [environment]::NewLine +
-                    'title' + [environment]::NewLine +
-                  '}' + [environment]::NewLine +
-                '}' + [environment]::NewLine +
-              '}' + [environment]::NewLine +
-           '}}}' 
-
            $query = 'query {' + [environment]::NewLine +
             'resource(url: "https://github.com/rob-demo/collaborate-effectively/pull/4") {' + [environment]::NewLine +
               '... on PullRequest {' + [environment]::NewLine +
@@ -215,17 +185,22 @@ jobs:
                 '}' + [environment]::NewLine +
               '}' + [environment]::NewLine +
            '}}}' 
+           Write-Host "Query = $query"
 
-           Write-Host "query value:"
-           Write-Host $query
-           $result = (gh api graphql -f query="$query")
+           $result = (gh api graphql -f query='$query')
 
            Write-Host 'GraphQL result: ' $result
 
            $result = $result | ConvertFrom-JSON -Depth 10
 
            if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
-             Write-Error "Error loading linked issues from this PR: [$($result | ConvertTo-Json -Depth 10)]"
+             Write-Error "Error loading linked issues from this PR"
+           }
+
+           # load the status field for this project
+           $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "$STATUSFIELDNAME"}
+           if ($null -eq $statusField) {
+             Write-Error "Cannot find status field with name [$STATUSFIELDNAME] for project [PROJECTNUMBER] in owner [$PROJECTOWNER]"
            }
             
            function updateIssueInProject {
@@ -236,9 +211,7 @@ jobs:
                $statusField
              )
 
-            Write-Host "Changing field [$($statusField.name)] to value [$STATUSFIELDVALUE]  with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
-
-            $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "Issue" -And $_.content.number -eq $ISSUENUMBER}
+            $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
             if ($null -eq $issue) {
               Write-Error "Cannot locate issue with number [$ISSUENUMBER] in project number [$PROJECTNUMBER] for owner [$PROJECTOWNER]"
             }
@@ -249,7 +222,7 @@ jobs:
 
                 # todo: check if the status option is actually forward, to prevent us from going backward
 
-                Write-Debug "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
+                Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
                 gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
             }
 
@@ -257,7 +230,5 @@ jobs:
            }
 
            foreach ($issue in $result.data.resource.closingIssuesReferences.edges) {
-             Write-Debug "Running foreach with this issue: $($issue | ConvertTo-Json)"
-             updateIssueInProject -PROJECTNUMBER $PROJECTNUMBER -PROJECTOWNER $PROJECTOWNER -statusField $statusField -ISSUENUMBER "$($issue.node.number)"
+             updateIssueInProject -PROJECTNUMBER $PROJECTNUMBER --PROJECTOWNER $PROJECTOWNER -ISSUENUMBER $ISSUENUMBER -statusField $statusField -ISSUENUMBER "$($issue.number)"
            }
-           
