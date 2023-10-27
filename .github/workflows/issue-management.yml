@@ -1,0 +1,43 @@
+name: Issue management
+
+on:
+  issues:
+    types: assigned
+
+# map fields with customized labels
+env:
+  todo: Todo
+  assigned: Assigned
+  done: Done
+
+  PROJECTOWNER: 'rob-demo'
+  PROJECTNUMBER: 2
+  ISSUE_URL: "${{ github.event.issue.html_url }}"
+
+permissions:
+  issues: write
+  repository-projects: write
+
+jobs:
+  issue-created:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'assigned' && github.repository == 'rob-demo/collaborate-effectively'    
+    steps:
+      - name: Instal gh projects extension
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh extension install github/gh-projects
+    
+      - name: Get Token
+        id: get_workflow_token
+        uses: peter-murray/workflow-application-token-action@8e1ba3bf1619726336414f1014e37f17fbadf1db
+        with:
+          application_id: ${{ vars.GH_APPLICATION_ID }}
+          application_private_key: ${{ secrets.GH_APPLICATION_PRIVATE_KEY }}
+          
+      - name: change-status-in-project
+        env:
+          GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+        run: |
+           gh projects list --user "$PROJECTOWNER"
+           #gh projects item-add "$PROJECTNUMBER" --user "$PROJECTOWNER" --url "$ISSUE_URL"
