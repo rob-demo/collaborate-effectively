@@ -39,5 +39,5 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
         run: |
-           gh projects list --user "$PROJECTOWNER"
+           gh projects list --organization "$PROJECTOWNER"
            #gh projects item-add "$PROJECTNUMBER" --organization "$PROJECTOWNER" --url "$ISSUE_URL"
