@@ -40,4 +40,4 @@ jobs:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
         run: |
            gh projects list --user "$PROJECTOWNER"
-           #gh projects item-add "$PROJECTNUMBER" --user "$PROJECTOWNER" --url "$ISSUE_URL"
+           #gh projects item-add "$PROJECTNUMBER" --organization "$PROJECTOWNER" --url "$ISSUE_URL"
