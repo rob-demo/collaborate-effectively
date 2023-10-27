@@ -107,7 +107,7 @@ jobs:
            $STATUSFIELDNAME = $env:STATUSFIELDNAME
            $PULLREQUEST = $env:PULLREQUEST | ConvertFrom-Json           
 
-           echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
+           Write-Debug "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
            $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
            if ($null -eq $project) {
              Write-Error "Cannot locate project with owner [$PROJECTOWNER] and number [$PROJECTNUMBER]"
@@ -149,7 +149,7 @@ jobs:
                $statusField
              )
 
-            Write-Debug "Running updateIssueInProject with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
+            Write-Host "Changing field [$STATUSFIELDNAME] to value [$($statusField.name)]  with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
 
             $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
             if ($null -eq $issue) {
