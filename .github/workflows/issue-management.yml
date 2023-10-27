@@ -48,4 +48,4 @@ jobs:
 
            Write-Host "status fieldid: [$($statusField.id)]"
                      
-           gh project item-edit --project-id "$PROJECTNUMBER" --id "$($project.id" --field-id "$($statusField.id)" --text "Todo"
+           gh project item-edit --project-id "$PROJECTNUMBER" --id "$($project.id)" --field-id "$($statusField.id)" --text "Todo"
