@@ -215,7 +215,7 @@ jobs:
                 '}' + [environment]::NewLine +
               '}' + [environment]::NewLine +
            '}}}' 
-           
+
            Write-Host "query value:"
            Write-Host $query
            $result = (gh api graphql -f query="$query") | ConvertFrom-Json -Depth 10
