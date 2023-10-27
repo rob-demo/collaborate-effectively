@@ -14,6 +14,7 @@ env:
   PROJECTNUMBER: 2
   ISSUE_URL: "${{ github.event.issue.html_url }}"
   ISSUE_NUMBER: "${{ github.event.issue.number }}"
+  ISSUE_ID: "${{ github.event.issue.id }}"
 
 permissions:
   issues: write
@@ -40,6 +41,7 @@ jobs:
            $PROJECTOWNER = $env:PROJECTOWNER
            $PROJECTNUMBER = $env:PROJECTNUMBER
            $ISSUENUMBER = $env:ISSUE_NUMBER
+           $ISSUEID = $env:ISSUE_ID
            
            echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
            $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
@@ -47,6 +49,6 @@ jobs:
            # load the status field for this project
            $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
 
-           Write-Host "status fieldid: [$($statusField.id)]"
+           Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUE_ID]"
                      
-           gh project item-edit --project-id "$($project.id)" --id $ISSUENUMBER --field-id "$($statusField.id)" --text "Todo"
+           gh project item-edit --project-id "$($project.id)" --id $ISSUEID --field-id "$($statusField.id)" --text "Todo"
