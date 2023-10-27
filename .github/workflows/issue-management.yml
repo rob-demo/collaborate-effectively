@@ -49,6 +49,6 @@ jobs:
            # load the status field for this project
            $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
 
-           Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUE_ID]"
+           Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID]"
                      
            gh project item-edit --project-id "$($project.id)" --id $ISSUEID --field-id "$($statusField.id)" --text "Todo"
