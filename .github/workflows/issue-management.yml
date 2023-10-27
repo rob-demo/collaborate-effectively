@@ -149,7 +149,7 @@ jobs:
                $statusField
              )
 
-            Write-Host "Changing field [$STATUSFIELDNAME] to value [$($statusField.name)]  with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
+            Write-Host "Changing field [$statusField.name] to value [$STATUSFIELDVALUE]  with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
 
             $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
             if ($null -eq $issue) {
