@@ -39,13 +39,14 @@ jobs:
            # test if the token works
            $PROJECTOWNER = $env:PROJECTOWNER
            $PROJECTNUMBER = $env:PROJECTNUMBER
+           $ISSUENUMBER = $env:ISSUE_NUMBER
            
            echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
            $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
            
            # load the status field for this project
-           $statusField = $(gh project field-list 2 --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
+           $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
 
            Write-Host "status fieldid: [$($statusField.id)]"
                      
-           gh project item-edit --project-id "$PROJECTNUMBER" --id "$($project.id)" --field-id "$($statusField.id)" --text "Todo"
+           gh project item-edit --project-id "$($project.id)" --id $ISSUENUMBER --field-id "$($statusField.id)" --text "Todo"
