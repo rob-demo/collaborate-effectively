@@ -185,7 +185,7 @@ jobs:
            $prUrl = $PULLREQUEST._links.html.href
            Write-Host "Searching for linked issues with url [$prUrl]"
            $query = 'query {' + [environment]::NewLine +
-            "resource(url: `"$prUrl`") {" + [environment]::NewLine +
+            "resource(url: "prUrl") {" + [environment]::NewLine +
               '... on PullRequest {' + [environment]::NewLine +
               'id' + [environment]::NewLine +
               'closingIssuesReferences (first: 50) {' + [environment]::NewLine +
@@ -199,6 +199,9 @@ jobs:
                 '}' + [environment]::NewLine +
               '}' + [environment]::NewLine +
            '}}}' 
+
+           # string replace the $prUrl in $query 
+           $query = $query.replace("prUrl", $prUrl)
            Write-Host "query value: $query"
            $result = (gh api graphql -f query=$query) | ConvertFrom-JSON -Depth 10
 
