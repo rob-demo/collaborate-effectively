@@ -20,7 +20,7 @@ permissions:
   repository-projects: write
 
 jobs:
-  issue-created:
+  issue-assigned:
     runs-on: ubuntu-latest
     if: github.event_name == 'issues' && github.event.action == 'assigned' && github.repository == 'rob-demo/collaborate-effectively'    
     steps:    
@@ -37,6 +37,7 @@ jobs:
         shell: pwsh
         run: |
            # test if the token works
+           $PROJECTOWNER = $env:PROJECTOWNER
            gh project list --owner "$PROJECTOWNER"
            
            # load the status field for this project
@@ -44,4 +45,4 @@ jobs:
 
            Write-Host "status fieldid: [$($statusField.id)]"
                      
-           gh project item-edit --project-id "$PROJECTNUMBER" --owner "$PROJECTOWNER" --id "$env:ISSUE_NUMBER" --field-id $statusField.id
+           gh project item-edit --project-id "$PROJECTNUMBER" --owner "$PROJECTOWNER" --id "$env:ISSUE_NUMBER" --field-id $statusField.id  --text "Todo"
