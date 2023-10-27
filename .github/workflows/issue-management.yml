@@ -114,7 +114,7 @@ jobs:
            }
 
            # load all linked issues from PR
-           $result = gh api graphql -f query='query {' +
+           $query = 'query {' +
             'resource(url: "https://github.com/rob-demo/collaborate-effectively/pull/4") {' +
               '... on PullRequest {' +
               'id' +
@@ -129,10 +129,13 @@ jobs:
                 '}' +
               '}' +
            '}}}' 
+           Write-Host "Query = $query"
+           
+           $result = gh api graphql -f query='$query'
 
-           Write-Host 'GraphQL result: ' + $result
+           Write-Host 'GraphQL result: ' $result
 
-           $result = $result | ConvertFrom-JSON
+           $result = $result | ConvertFrom-JSON -Depth 10
 
            if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
              Write-Error "Error loading linked issues from this PR"
