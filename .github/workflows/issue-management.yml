@@ -37,7 +37,7 @@ jobs:
         shell: pwsh
         run: |
            # test if the token works
-           gh project list --org "$PROJECTOWNER"
+           gh project list --owner "$PROJECTOWNER"
            
            # load the status field for this project
            $statusField = $(gh project field-list 2 --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
