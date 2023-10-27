@@ -45,10 +45,12 @@ jobs:
            
            echo "PROJECTOWNER = [$PROJECTOWNER] and PROJECTNUMBER = [$PROJECTNUMBER]"           
            $project = $(gh project list --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).projects | Where-Object {$_.number -eq $PROJECTNUMBER}
+
+           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
            
            # load the status field for this project
            $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
 
-           Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID]"
+           Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
                      
-           gh project item-edit --project-id "$($project.id)" --id $ISSUEID --field-id "$($statusField.id)" --text "Todo"
+           gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --text "Todo"
