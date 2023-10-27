@@ -199,12 +199,8 @@ jobs:
                 '}' + [environment]::NewLine +
               '}' + [environment]::NewLine +
            '}}}' 
-
-           Write-Host "query value1: $query"
-           # string replace the $prUrl in $query 
-           $query = $query.replace("prUrl", $prUrl)
            Write-Host "query value: $query"
-           $result = (gh api graphql -f query=$query) | ConvertFrom-JSON -Depth 10
+           $result = (gh api graphql -f query="$query") | ConvertFrom-JSON -Depth 10
 
            if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
              Write-Error "Error loading linked issues from this PR: [$($result | ConvertTo-Json -Depth 10)]"
