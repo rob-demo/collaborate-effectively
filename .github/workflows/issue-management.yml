@@ -77,7 +77,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-           echo "${{ github.event_name }}"
+           echo "Event: ${{ github.event_name }}"
+           echo "Info: ${{ toJSON(github.event) }}"
 
   pr-openend:
     runs-on: ubuntu-latest
