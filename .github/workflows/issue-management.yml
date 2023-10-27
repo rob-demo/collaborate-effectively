@@ -130,12 +130,7 @@ jobs:
               '}' + [environment]::NewLine +
            '}}}' 
            Write-Host "Query contents = [$query]"
-
-           $result = (gh api graphql -f query=$query)
-
-           Write-Host 'GraphQL result: ' $result
-
-           $result = $result | ConvertFrom-JSON -Depth 10
+           $result = (gh api graphql -f query=$query) | ConvertFrom-JSON -Depth 10
 
            if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
              Write-Error "Error loading linked issues from this PR"
@@ -154,6 +149,8 @@ jobs:
                $ISSUENUMBER,
                $statusField
              )
+
+            Write-Host 'Running updateIssueInProject with values PROJECTNUMBER [$PROJECTNUMBER], PROJECTOWNER [$PROJECTOWNER], ISSUENUMBER [$ISSUENUMBER]"
 
             $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
             if ($null -eq $issue) {
@@ -174,6 +171,7 @@ jobs:
            }
 
            foreach ($issue in $result.data.resource.closingIssuesReferences.edges) {
+             Write-Host "Running foreach with this issue: $($issue | ConvertTo-Json)"
              updateIssueInProject -PROJECTNUMBER $PROJECTNUMBER --PROJECTOWNER $PROJECTOWNER -ISSUENUMBER $ISSUENUMBER -statusField $statusField -ISSUENUMBER "$($issue.number)"
            }
 
