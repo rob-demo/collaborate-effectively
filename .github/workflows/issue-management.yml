@@ -185,7 +185,7 @@ jobs:
            $prUrl = $PULLREQUEST._links.html.href
            Write-Host "Searching for linked issues with url [$prUrl]"
            $query = 'query {' + [environment]::NewLine +
-            "resource(url: ""$prUrl"") {" + [environment]::NewLine +
+            "resource(url: `"$prUrl`") {" + [environment]::NewLine +
               '... on PullRequest {' + [environment]::NewLine +
               'id' + [environment]::NewLine +
               'closingIssuesReferences (first: 50) {' + [environment]::NewLine +
@@ -203,7 +203,7 @@ jobs:
            $result = (gh api graphql -f query=$query) | ConvertFrom-JSON -Depth 10
 
            if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
-             Write-Error "Error loading linked issues from this PR: [$($result | ConvertTo-Json)]"
+             Write-Error "Error loading linked issues from this PR: [$($result | ConvertTo-Json -Depth 10)]"
            }
             
            function updateIssueInProject {
