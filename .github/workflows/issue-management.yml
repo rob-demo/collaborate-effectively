@@ -115,22 +115,22 @@ jobs:
 
            # load all linked issues from PR
            $result = gh api graphql -f query=@'
-             query {
-               resource(url: "https://github.com/rob-demo/collaborate-effectively/pull/4") {
-                 ... on PullRequest {
-                 id
-                 closingIssuesReferences (first: 50) {
-                   edges {
-                     node {
-                       id
-                       body
-                       number
-                       title
-                     }
-                   }
-                 }
-             }}}
-             '@ | ConvertFrom-JSON
+           query {
+            resource(url: "https://github.com/rob-demo/collaborate-effectively/pull/4") {
+              ... on PullRequest {
+              id
+              closingIssuesReferences (first: 50) {
+                edges {
+                  node {
+                    id
+                    body
+                    number
+                    title
+                  }
+                }
+              }
+           }}}
+           '@ | ConvertFrom-JSON
 
            if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
              Write-Error "Error loading linked issues from this PR"
