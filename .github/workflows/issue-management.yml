@@ -112,7 +112,15 @@ jobs:
            }
 
            # find all issues to update:
-           $ISSUENUMBER = (($PULLREQUEST._links.issue) -split "/")[-1]
+           if ($null -eq $PULLREQUEST._links.issue)) {
+              Write-Error "Pull request not linked to an issue"
+           }
+
+           if ($null -eq $PULLREQUEST._links.issue.href) {
+              Write-Error "Error locating the issue link from the pull request: $($PULLREQUEST._links.issue | ConvertTo-JSON)"
+           }
+
+           $ISSUENUMBER = (($PULLREQUEST._links.issue.href) -split "/")[-1]
 
            $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
            if ($null -eq $issue) {
