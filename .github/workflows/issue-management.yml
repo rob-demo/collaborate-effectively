@@ -113,32 +113,62 @@ jobs:
              Write-Error "Cannot locate project with owner [$PROJECTOWNER] and number [$PROJECTNUMBER]"
            }
 
-           # find all issues to update:
-           if ($null -eq $PULLREQUEST._links.issue) {
-              Write-Error "Pull request not linked to an issue"
+           # load all linked issues from PR
+           $result = gh api graphql -f query='
+             query {
+               resource(url: "https://github.com/rob-demo/collaborate-effectively/pull/4") {
+                 ... on PullRequest {
+                 id
+                 closingIssuesReferences (first: 50) {
+                   edges {
+                     node {
+                       id
+                       body
+                       number
+                       title
+                     }
+                   }
+                 }
+             }}}' | ConvertFrom-JSON
+
+           if ($null -eq $result.data.resource.closingIssuesReferences.edges) {
+             Write-Error "Error loading linked issues from this PR"
            }
 
-           if ($null -eq $PULLREQUEST._links.issue.href) {
-              Write-Error "Error locating the issue link from the pull request: $($PULLREQUEST._links.issue | ConvertTo-JSON)"
-           }
-
-           $ISSUENUMBER = (($PULLREQUEST._links.issue.href) -split "/")[-1]
-
-           $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
-           if ($null -eq $issue) {
-             Write-Error "Cannot locate issue with number [$ISSUENUMBER] in project number [$PROJECTNUMBER] for owner [$PROJECTOWNER]"
-           }
-           
            # load the status field for this project
            $statusField = $(gh project field-list $PROJECTNUMBER --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "$STATUSFIELDNAME"}
-           if ($statusField.type -eq "ProjectV2SingleSelectField") {
-              # find the option with name
-              $option = $statusField.options | Where-Object {$_.name -eq "$STATUSFIELDVALUE"}
+           if ($null -eq $statusField) {
+             Write-Error "Cannot find status field with name [$STATUSFIELDNAME] for project [PROJECTNUMBER] in owner [$PROJECTOWNER]"
+           }
+            
+           function updateIssueInProject {
+             param (
+               $PROJECTNUMBER,
+               $PROJECTOWNER,
+               $ISSUENUMBER,
+               $statusField
+             )
 
-              # todo: check if the status option is actually forward, to prevent us from going backward
+            $issue = $(gh project item-list $PROJECTNUMBER --owner "$PROJECTOWNER" --format json | ConvertFrom-Json).items | Where-Object {$_.content.type -eq "issue" -And $_.content.number -eq $ISSUENUMBER}
+            if ($null -eq $issue) {
+              Write-Error "Cannot locate issue with number [$ISSUENUMBER] in project number [$PROJECTNUMBER] for owner [$PROJECTOWNER]"
+            }
+            
+            if ($statusField.type -eq "ProjectV2SingleSelectField") {
+                # find the option with name
+                $option = $statusField.options | Where-Object {$_.name -eq "$STATUSFIELDVALUE"}
 
-              Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
-              gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
+                # todo: check if the status option is actually forward, to prevent us from going backward
+
+                Write-Host "status fieldid: [$($statusField.id)] and ISSUE_ID = [$ISSUEID] and Issue.Id = [$($issue.id)]"
+                gh project item-edit --project-id "$($project.id)" --id "$($issue.id)" --field-id "$($statusField.id)" --single-select-option-id "$($option.id)"
+            }
+
+            # todo: add support for other field types
            }
 
-           # todo: add support for other field types                     
+           foreach ($issue in $result.data.resource.closingIssuesReferences.edges) {
+             updateIssueInProject -PROJECTNUMBER $PROJECTNUMBER --PROJECTOWNER $PROJECTOWNER -ISSUENUMBER $ISSUENUMBER -statusField $statusField -ISSUENUMBER "$($issue.number)"
+           }
+
+           
