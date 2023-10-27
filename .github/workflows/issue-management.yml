@@ -13,6 +13,7 @@ env:
   PROJECTOWNER: 'rob-demo'
   PROJECTNUMBER: 2
   ISSUE_URL: "${{ github.event.issue.html_url }}"
+  ISSUE_NUMBER: "${{ github.event.issue.number }}"
 
 permissions:
   issues: write
@@ -22,12 +23,7 @@ jobs:
   issue-created:
     runs-on: ubuntu-latest
     if: github.event_name == 'issues' && github.event.action == 'assigned' && github.repository == 'rob-demo/collaborate-effectively'    
-    steps:
-      - name: Instal gh projects extension
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh extension install github/gh-projects
-    
+    steps:    
       - name: Get Token
         id: get_workflow_token
         uses: peter-murray/workflow-application-token-action@8e1ba3bf1619726336414f1014e37f17fbadf1db
@@ -38,6 +34,12 @@ jobs:
       - name: change-status-in-project
         env:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+        shell: pwsh
         run: |
-           gh projects list --org "$PROJECTOWNER"
-           #gh projects item-add "$PROJECTNUMBER" --org "$PROJECTOWNER" --url "$ISSUE_URL"
+           # test if the token works
+           gh project list --org "$PROJECTOWNER"
+           
+           # load the status field for this project
+           $statusField = $(gh project field-list 2 --owner $PROJECTOWNER --format json | ConvertFrom-Json).fields | Where-Object {$_.name -eq "Status"}
+                     
+           gh project item-edit --project-id "$PROJECTNUMBER" --org "$PROJECTOWNER" --id "$env:ISSUE_NUMBER" --field-id $statusField.id
