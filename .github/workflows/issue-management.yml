@@ -131,7 +131,7 @@ jobs:
            '}}}' 
            Write-Host "Query contents = [$query]"
 
-           $result = (gh api graphql -f query='$query')
+           $result = (gh api graphql -f query=$query)
 
            Write-Host 'GraphQL result: ' $result
 
