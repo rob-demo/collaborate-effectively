@@ -75,10 +75,12 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    env:
+      info: ${{ toJSON(github.event) }}
     steps:
       - run: |
            echo "Event: ${{ github.event_name }}"
-           echo "Info: ${{ toJSON(github.event) }}"
+           echo "Info: $info"
 
   pr-openend:
     runs-on: ubuntu-latest
