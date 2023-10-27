@@ -115,7 +115,7 @@ jobs:
 
            # load all linked issues from PR
            $query = 'query {' + [environment]::NewLine +
-            'resource(url: "https://github.com/rob-demo/collaborate-effectively/pull/4") {' + [environment]::NewLine +
+            'resource(url: \"https://github.com/rob-demo/collaborate-effectively/pull/4\") {' + [environment]::NewLine +
               '... on PullRequest {' + [environment]::NewLine +
               'id' + [environment]::NewLine +
               'closingIssuesReferences (first: 50) {' + [environment]::NewLine +
@@ -129,7 +129,7 @@ jobs:
                 '}' + [environment]::NewLine +
               '}' + [environment]::NewLine +
            '}}}' 
-           Write-Host "Query = $query"
+           Write-Host "Query contents = [$query]"
 
            $result = (gh api graphql -f query='$query')
 
