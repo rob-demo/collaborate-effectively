@@ -2,7 +2,7 @@
 title: "🎉 Your First Github steps!"
 ---
 
-![Image of Octocat logo](https://media2.giphy.com/media/du3J3cXyzhj75IOgvA/giphy.gif)
+![Animated image of Octocat logo](https://media2.giphy.com/media/du3J3cXyzhj75IOgvA/giphy.gif)
 
 Welcome to the team! Take your first steps on GitHub and through our team pages.
 
@@ -13,9 +13,8 @@ Welcome to the team! Take your first steps on GitHub and through our team pages.
 |![rajbos]|@rajbos|Rob Bos|The Netherlands, CEST|
 |![aatmmr]|@aatmmr|Maik Müller|Germany, CEST|
 |![chtzvt]|@chtzvt|Charlton Trezevant|US, ET|
-|![hardingve]|@hardingve|Victoria Harding|US|
-|![jessehouwing]@jessehouwing|Jesse Houwing|The Netherlands|CEST|
-
+|![hardingve]   |@hardingve   |Victoria Harding, ET|
+|![jessehouwing]|@jessehouwing|Jesse Houwing   |The Netherlands, CEST|
 
 
 
