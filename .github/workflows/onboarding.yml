@@ -60,6 +60,7 @@ jobs:
                   
                   let labels = []
                   labels.push(directory)
+                  labels.push(`on-boarding`)
 
                   console.log('--------------------')
 
