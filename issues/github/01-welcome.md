@@ -16,8 +16,6 @@ Welcome to the team! Take your first steps on GitHub and through our team pages.
 |![hardingve]   |@hardingve   |Victoria Harding, ET|
 |![jessehouwing]|@jessehouwing|Jesse Houwing   |The Netherlands, CEST|
 
-
-
 [rajbos]: https://avatars.githubusercontent.com/rajbos?s=80
 [aatmmr]: https://avatars.githubusercontent.com/aatmmr?s=80
 [chtzvt]: https://avatars.githubusercontent.com/chtzvt?s=80
