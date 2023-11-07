@@ -1,5 +1,5 @@
 ---
-title: "🎉 Your First Github steps!"
+title: "🎉 Your First GitHub steps!"
 ---
 
 ![Animated image of Octocat logo](https://media2.giphy.com/media/du3J3cXyzhj75IOgvA/giphy.gif)
