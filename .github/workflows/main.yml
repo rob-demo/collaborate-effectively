@@ -1,0 +1,72 @@
+name: Onboarding new team member
+on:
+  workflow_dispatch:
+  
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/github-script@v6
+        with:
+          script: |
+             let fs = require('fs')             
+             var directories = fs.readdirSync('issues/');
+             
+             const owner = context.repo.owner
+             const repo = context.repo.repo
+             let assignees = []
+             assignees.push(context.actor)
+             const opts = await github.rest.issues.listForRepo({
+                owner,
+                repo,
+                assignees
+             });
+             const issues = await github.paginate(opts)
+                          
+             directories.forEach(function (directory) {                
+                console.log(directory);
+                
+                const files = fs.readdirSync(`issues/${directory}`, 'UTF8')
+                
+                files.forEach(function (file) {
+                
+                  const fileContents = fs.readFileSync(`issues/${directory}/${file}`, 'UTF8')   
+                  let arr = fileContents.split('\n');
+                  const title = arr[1].substring(8, arr[1].length-1)
+                  console.log('title: ' + title)
+                  // Check if there is an issue with same title
+                  for (const issue of issues) {
+                    if (issue.state === 'open' && issue.title === title) { // todo: remove the state check in production
+                      console.log(`Issue with title ${title} already exist for user ${context.actor}`)
+                      return 0
+                    }
+                  }
+                  console.log(`Triggered by ${context.actor}`)
+                  console.log('--------------------')
+                  let body = ''
+                  for (let i=3; i<arr.length; i++) {
+                      console.log(`${i} - ${arr[i]}`)
+                      body += arr[i] + '\n'
+                  }      
+                  console.log('-------BODY---------')
+                  console.log(body)
+                  
+                  let labels = []
+                  labels.push(directory)
+                  labels.push(`on-boarding`)
+                  console.log('--------------------')
+                  github.rest.issues.create({
+                        owner,
+                        repo,
+                        title,
+                        body,
+                        assignees,
+                        labels
+                      });
+                  });  
+                }
+              )
