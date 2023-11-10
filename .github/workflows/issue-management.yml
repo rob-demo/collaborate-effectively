@@ -13,7 +13,7 @@ env:
   progress: "In Progress"
   done: Done
 
-  PROJECTOWNER: 'rob-demo'
+  PROJECTOWNER: 'sharkmerry7'
   PROJECTNUMBER: 2
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
 
   issue-assigned:
     runs-on: ubuntu-latest
-    if: github.event_name == 'issues' && github.event.action == 'assigned' && github.repository == 'rob-demo/collaborate-effectively'
+    if: github.event_name == 'issues' && github.event.action == 'assigned' && github.repository == 'sharkmerry7/collaborate-effectively'
     steps:    
       - name: Get Token
         id: get_workflow_token
@@ -78,7 +78,7 @@ jobs:
 
   pr-opened2:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'opened' && github.repository == 'rob-demo/collaborate-effectively'
+    if: github.event_name == 'pull_request' && github.event.action == 'opened' && github.repository == 'sharkmerry7/collaborate-effectively'
     steps:    
       - name: Get Token
         id: get_workflow_token
@@ -140,7 +140,7 @@ jobs:
 
   pr-opened:
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && github.repository == 'rob-demo/collaborate-effectively') && (github.event.action == 'opened' || github.event.action == 'reopened')
+    if: (github.event_name == 'pull_request' && github.repository == 'sharkmerry7/collaborate-effectively') && (github.event.action == 'opened' || github.event.action == 'reopened')
     steps:    
       - name: Get Token
         id: get_workflow_token
@@ -201,7 +201,7 @@ jobs:
            '}}}' 
 
            $query = 'query {' + [environment]::NewLine +
-            'resource(url: "https://github.com/rob-demo/collaborate-effectively/pull/4") {' + [environment]::NewLine +
+            'resource(url: "https://github.com/sharkmerry7/collaborate-effectively/pull/4") {' + [environment]::NewLine +
               '... on PullRequest {' + [environment]::NewLine +
               'id' + [environment]::NewLine +
               'closingIssuesReferences (first: 50) {' + [environment]::NewLine +
