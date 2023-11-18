@@ -13,6 +13,7 @@ jobs:
       - uses: actions/github-script@v6
         with:
           script: |
+            github-token: ${{ secrets.ONBOARD }}
              let fs = require('fs')             
              var directories = fs.readdirSync('issues/');
              
